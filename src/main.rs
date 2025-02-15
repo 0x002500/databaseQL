@@ -1,8 +1,8 @@
 mod schemas;
 
 use actix_web::{web, App, HttpResponse, HttpServer};
+use async_graphql::Schema;
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
-use schemas::{MySchema, QueryRoot};
 use sqlx::{Any, Pool};
 use std::env;
 
@@ -19,7 +19,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to connect to database");
 
     // 构建 GraphQL schema，并将数据库连接池注入到上下文中
-    let schema = MySchema::build(QueryRoot, async_graphql::EmptyMutation, async_graphql::EmptySubscription)
+    let schema = Schema::build(schemas::QueryRoot, async_graphql::EmptyMutation, async_graphql::EmptySubscription)
         .data(pool)
         .finish();
 
@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 /// 处理 GraphQL 请求
-async fn graphql_handler(schema: web::Data<MySchema>, req: GraphQLRequest) -> GraphQLResponse {
+async fn graphql_handler(schema: web::Data<schema>, req: GraphQLRequest) -> GraphQLResponse {
     schema.execute(req.into_inner()).await.into()
 }
 

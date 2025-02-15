@@ -25,12 +25,32 @@ impl Table {
         let rows = sqlx::query(&query).fetch_all(&mut conn).await.unwrap();
         let column: Vec<String> = sqlx::query_as(
             r#"
-            SELECT id, name, email FROM users WHERE name = ?;
+            SELECT * FROM users WHERE name = ?;
             "#
         )
         .bind("Alice")
         .fetch_one(&mut conn)
         .await?;
         columns
+    }
+}
+
+#[Object]
+impl Database {
+    async fn tables<'ctx>(&self, ctx: &Context<'_>) -> Vec<Table> {
+        let pool = ctx.data::<Pool<Any>>().expect("unable to get pool");
+        let mut conn = pool.acquire().await.unwrap();
+        let rows = sqlx::query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").fetch_all(&mut conn).await.unwrap();
+        let tables: Vec<Table> = rows.iter().map(|row| Table { table_name: row.get(0) }).collect();
+        tables
+    }
+}
+
+pub struct QueryRoot;
+
+#[Object]
+impl QueryRoot {
+    async fn db<'ctx>(&self, ctx: &Context<'_>, db_name: String) -> Database {
+        Database { db_name }
     }
 }
