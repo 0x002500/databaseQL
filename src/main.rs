@@ -14,7 +14,7 @@ async fn main() -> std::io::Result<()> {
     // 从环境变量中获取数据库连接 URL
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     // 建立数据库连接池，使用 sqlx 的 Any 类型支持多种数据库
-    let pool = Pool::<Any>::connect(&database_url)
+    let pool: Pool<Any> = Pool::<Any>::connect(&database_url)
         .await
         .expect("Failed to connect to database");
 
