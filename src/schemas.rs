@@ -21,14 +21,10 @@ impl Table {
     async fn columns<'ctx>(&self, ctx: &Context<'_>, db_name: String) -> Vec<Column> {
         let pool = ctx.data::<Pool<Any>>().expect("unable to get pool");
         let mut conn = pool.acquire().await.unwrap();
-        let query = format!("SELECT column_name FROM information_schema.columns WHERE table_name = '{}'", self.table_name);
         let rows = sqlx::query(&query).fetch_all(&mut conn).await.unwrap();
-        let column: Vec<String> = sqlx::query_as(
-            r#"
-            SELECT * FROM users WHERE name = ?;
-            "#
-        )
-        .bind("Alice")
+        let column: Vec<String> = sqlx::query_as(SELECT * FROM ? WHERE id = ?;)
+        .bind(&self.table_name)
+        .bind(id)
         .fetch_one(&mut conn)
         .await?;
         columns
@@ -40,7 +36,7 @@ impl Database {
     async fn tables<'ctx>(&self, ctx: &Context<'_>) -> Vec<Table> {
         let pool = ctx.data::<Pool<Any>>().expect("unable to get pool");
         let mut conn = pool.acquire().await.unwrap();
-        let rows = sqlx::query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").fetch_all(&mut conn).await.unwrap();
+        let rows = sqlx::query("SELECT * FROM ?").bind(ctx.table_name).fetch_all(&mut conn).await.unwrap();
         let tables: Vec<Table> = rows.iter().map(|row| Table { table_name: row.get(0) }).collect();
         tables
     }
